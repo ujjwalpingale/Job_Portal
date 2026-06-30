@@ -5,11 +5,17 @@ from app.middleware import ProcessTimeMiddleware
 from app.exceptions import global_exception_handler
 from app.routers import auth, candidate, recruiter, jobs, applications
 
+from app.database import engine, Base
+from app.models import user, job, application
+
+# Create tables
+Base.metadata.create_all(bind=engine)
+
 settings = get_settings()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="A professional, production-ready backend for a Job Portal using FastAPI (In-Memory Data version).",
+    description="A professional, production-ready backend for a Job Portal using FastAPI (MySQL Data version).",
     version="1.0.0",
 )
 
@@ -38,3 +44,4 @@ app.include_router(applications.router, prefix=settings.API_V1_STR)
 @app.get("/")
 def read_root():
     return {"message": f"Welcome to the {settings.PROJECT_NAME}!"}
+

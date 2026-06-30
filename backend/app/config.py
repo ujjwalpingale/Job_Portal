@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Job Portal API"
     API_V1_STR: str = "/api/v1"
     
+    DATABASE_URL: str
+    
     # JWT Authentication configuration
     SECRET_KEY: str
     ALGORITHM: str = "HS256"

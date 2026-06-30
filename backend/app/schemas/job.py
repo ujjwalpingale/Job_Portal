@@ -25,3 +25,5 @@ class JobUpdate(BaseModel):
 class JobOut(JobBase):
     id: int
     recruiter_id: int
+
+    model_config = {"from_attributes": True}

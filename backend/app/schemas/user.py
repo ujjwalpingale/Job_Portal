@@ -47,3 +47,5 @@ class UserOut(UserBase):
     id: int
     role: str
     profile: dict
+
+    model_config = {"from_attributes": True}

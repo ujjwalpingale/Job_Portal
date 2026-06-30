@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from typing import Optional
+from sqlalchemy.orm import Session
 from app.services.job_service import get_all_jobs, get_job_by_id
 from app.utils.responses import success_response
+from app.dependencies import get_db
 
 router = APIRouter(prefix="/jobs", tags=["Public Jobs"])
 
@@ -13,12 +15,14 @@ def search_and_filter_jobs(
     job_type: Optional[str] = Query(None, description="Filter by job type"),
     salary: Optional[str] = Query(None, description="Filter by salary string"),
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100)
+    limit: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db)
 ):
     """
     Get all jobs, search and filter. Publicly accessible.
     """
     jobs = get_all_jobs(
+        db=db,
         keyword=keyword,
         location=location,
         experience=experience,
@@ -30,9 +34,10 @@ def search_and_filter_jobs(
     return success_response(message="Jobs retrieved successfully", data=jobs)
 
 @router.get("/{job_id}")
-def get_job_details(job_id: int):
+def get_job_details(job_id: int, db: Session = Depends(get_db)):
     """
     Get details of a specific job. Publicly accessible.
     """
-    job = get_job_by_id(job_id)
+    job = get_job_by_id(db, job_id)
     return success_response(message="Job details retrieved successfully", data=job)
+

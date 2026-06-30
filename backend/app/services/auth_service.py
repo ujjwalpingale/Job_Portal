@@ -1,65 +1,54 @@
 from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
 from app.schemas.user import UserCreate
-from app.dummy_data import USERS, generate_user_id
+from app.models.user import User
 from app.auth import get_password_hash, verify_password
 
-def register_user(user_in: UserCreate) -> dict:
+def register_user(db: Session, user_in: UserCreate) -> User:
     # Check if user already exists
-    for u in USERS:
-        if u["email"] == user_in.email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User with this email already exists."
-            )
+    existing_user = db.query(User).filter(User.email == user_in.email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User with this email already exists."
+        )
             
     # Create new user
-    new_user = {
-        "id": generate_user_id(),
-        "email": user_in.email,
-        "hashed_password": get_password_hash(user_in.password),
-        "role": user_in.role,
-        "profile": {}
-    }
-    
-    USERS.append(new_user)
-    
-    # Return user without password
-    return {
-        "id": new_user["id"],
-        "email": new_user["email"],
-        "role": new_user["role"],
-        "profile": new_user["profile"]
-    }
+    new_user = User(
+        email=user_in.email,
+        hashed_password=get_password_hash(user_in.password),
+        role=user_in.role,
+        profile={}
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
 
-def authenticate_user(email: str, password: str) -> dict:
-    for user in USERS:
-        if user["email"] == email:
-            if verify_password(password, user["hashed_password"]):
-                return user
+def authenticate_user(db: Session, email: str, password: str) -> User:
+    user = db.query(User).filter(User.email == email).first()
+    if user and verify_password(password, user.hashed_password):
+        return user
     return None
 
-def get_user_by_id(user_id: int) -> dict:
-    for user in USERS:
-        if user["id"] == user_id:
-            return user
-    return None
+def get_user_by_id(db: Session, user_id: int) -> User:
+    return db.query(User).filter(User.id == user_id).first()
 
-def update_user_profile(user_id: int, profile_data: dict) -> dict:
-    user = get_user_by_id(user_id)
+def update_user_profile(db: Session, user_id: int, profile_data: dict) -> User:
+    user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found."
         )
         
-    # Update only the provided fields
+    # Update only the provided fields in the JSON column
+    current_profile = dict(user.profile or {})
     for k, v in profile_data.items():
         if v is not None:
-            user["profile"][k] = v
+            current_profile[k] = v
             
-    return {
-        "id": user["id"],
-        "email": user["email"],
-        "role": user["role"],
-        "profile": user["profile"]
-    }
+    user.profile = current_profile
+    db.commit()
+    db.refresh(user)
+    return user

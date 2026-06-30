@@ -14,3 +14,5 @@ class ApplicationOut(ApplicationBase):
     id: int
     candidate_id: int
     status: str
+
+    model_config = {"from_attributes": True}
