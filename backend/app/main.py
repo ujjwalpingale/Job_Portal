@@ -1,47 +1,36 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.config import get_settings
-from app.middleware import ProcessTimeMiddleware
-from app.exceptions import global_exception_handler
-from app.routers import auth, candidate, recruiter, jobs, applications
+from fastapi.staticfiles import StaticFiles
 
 from app.database import engine, Base
-from app.models import user, job, application
+from app import routers
 
 # Create tables
 Base.metadata.create_all(bind=engine)
 
-settings = get_settings()
-
 app = FastAPI(
-    title=settings.PROJECT_NAME,
-    description="A professional, production-ready backend for a Job Portal using FastAPI (MySQL Data version).",
+    title="Job Portal API",
+    description="A simplified, pure FastAPI backend for a Job Portal.",
     version="1.0.0",
 )
-
-# Add custom middlewares
-app.add_middleware(ProcessTimeMiddleware)
 
 # Add CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Update with frontend URLs in production
+    allow_origins=["*"], # Allows all origins, adjust in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Add global exception handlers
-app.add_exception_handler(Exception, global_exception_handler)
-
 # Include routers
-app.include_router(auth.router, prefix=settings.API_V1_STR)
-app.include_router(candidate.router, prefix=settings.API_V1_STR)
-app.include_router(recruiter.router, prefix=settings.API_V1_STR)
-app.include_router(jobs.router, prefix=settings.API_V1_STR)
-app.include_router(applications.router, prefix=settings.API_V1_STR)
+app.include_router(routers.router, prefix="/api/v1")
+
+# Mount static files for uploads
+os.makedirs("uploads/resumes", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 def read_root():
-    return {"message": f"Welcome to the {settings.PROJECT_NAME}!"}
-
+    return {"message": "Welcome to the Job Portal API!"}
