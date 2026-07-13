@@ -1,5 +1,6 @@
 # Environments
 .env
+backend/.env
 .venv
 env/
 venv/
@@ -15,6 +16,10 @@ __pycache__/
 
 # Uploads
 backend/uploads/
+
+# Database
+*.db
+*.sqlite3
 
 # IDE
 .vscode/

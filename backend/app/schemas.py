@@ -62,11 +62,21 @@ class JobResponse(BaseModel):
 # -----------------
 # Application Schemas
 # -----------------
+class CandidateResponse(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    resume_path: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 class ApplicationResponse(BaseModel):
     id: int
     candidate_id: int
     job_id: int
     status: str
+    candidate: Optional[CandidateResponse] = None
 
     class Config:
         from_attributes = True
